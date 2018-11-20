@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="nb"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpReadWrite.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Innlevering: Core</a> &gt; <a href="index.source.html" class="el_package">no.kristiania.pgr200.core</a> &gt; <span class="el_source">HttpReadWrite.java</span></div><h1>HttpReadWrite.java</h1><pre class="source lang-java linenums">package no.kristiania.pgr200.core;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+<span class="nc" id="L7">public class HttpReadWrite {</span>
+
+    public static String readLine(InputStream input) throws IOException {
+
+<span class="nc" id="L11">        StringBuilder result = new StringBuilder();</span>
+        int c;
+<span class="nc bnc" id="L13" title="All 2 branches missed.">        while ((c = input.read()) != -1) {</span>
+
+<span class="nc bnc" id="L15" title="All 2 branches missed.">            if (c == '\r') {</span>
+<span class="nc" id="L16">                c = input.read();</span>
+<span class="nc" id="L17">                break;</span>
+            }
+
+
+<span class="nc" id="L21">            result.append((char)c);</span>
+        }
+
+<span class="nc" id="L24">        return result.toString();</span>
+
+    }
+
+    public static String readBody(InputStream input, int contentLength) throws IOException {
+
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (contentLength &lt; 0) {</span>
+<span class="nc" id="L31">            return null;</span>
+        }
+
+<span class="nc" id="L34">        StringBuilder body = new StringBuilder();</span>
+
+        int c;
+<span class="nc" id="L37">        int remainder = contentLength;</span>
+
+<span class="nc bnc" id="L39" title="All 4 branches missed.">        while ((remainder-- &gt; 0) &amp;&amp; (c = input.read()) != -1) {</span>
+
+<span class="nc" id="L41">            body.append((char)c);</span>
+        }
+
+<span class="nc" id="L44">        return body.toString();</span>
+
+    }
+
+
+    public static void writeLine(OutputStream outputStream, String line) throws IOException {
+<span class="nc" id="L50">        outputStream.write((line + &quot;\r\n&quot;).getBytes());</span>
+<span class="nc" id="L51">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

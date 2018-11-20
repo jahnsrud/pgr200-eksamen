@@ -1,0 +1,16 @@
+@startuml
+
+actor User
+node Client
+cloud Network
+node no.kristiania.pgr200.server.Server
+database Database
+
+User -down-> Client: 1. add --title My Talk
+Client -down-> Network: 2. POST http://.../talks title=My+Talk
+Network -down-> no.kristiania.pgr200.server.Server
+no.kristiania.pgr200.server.Server -down-> Database: 3. INSERT INTO TABLE talks (title) VALUES ('My Talk')
+
+
+
+@enduml

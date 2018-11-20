@@ -1,0 +1,31 @@
+@startuml
+
+actor User
+participant Client
+participant no.kristiania.pgr200.server.Server
+database Database
+
+== Adding a talk ==
+User -> Client ++: add -title "My Talk" -description ... 
+Client -> no.kristiania.pgr200.server.Server ++: POST http://.../api/talks title=My+Talk
+no.kristiania.pgr200.server.Server -> Database ++: INSERT INTO TABLE talks (title) VALUES ('My Talk')
+no.kristiania.pgr200.server.Server <-- Database --
+Client <-- no.kristiania.pgr200.server.Server --: Location: http://.../api/id
+User <-- Client --: Id is <id>
+== Listing all talks ==
+User -> Client ++: list
+Client -> no.kristiania.pgr200.server.Server ++: GET http://.../api/talks
+no.kristiania.pgr200.server.Server -> Database ++: SELECT * FROM talks
+no.kristiania.pgr200.server.Server <-- Database --: talk rows
+Client <-- no.kristiania.pgr200.server.Server --: csv
+User <-- Client --: [id, title]*
+== Showing a talk ==
+User -> Client ++: show -id <id>
+Client -> no.kristiania.pgr200.server.Server ++: GET http://.../api/talks/<id>
+no.kristiania.pgr200.server.Server -> Database ++: SELECT * FROM talks WHERE id = ?
+no.kristiania.pgr200.server.Server <-- Database --: talk row
+Client <-- no.kristiania.pgr200.server.Server --: title, description
+User <-- Client --: title, description
+
+
+@enduml

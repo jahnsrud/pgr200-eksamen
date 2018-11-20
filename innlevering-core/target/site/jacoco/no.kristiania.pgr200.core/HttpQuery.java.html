@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="nb"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpQuery.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Innlevering: Core</a> &gt; <a href="index.source.html" class="el_package">no.kristiania.pgr200.core</a> &gt; <span class="el_source">HttpQuery.java</span></div><h1>HttpQuery.java</h1><pre class="source lang-java linenums">package no.kristiania.pgr200.core;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class HttpQuery {
+
+<span class="fc" id="L12">    private Map&lt;String, String&gt; parameters = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc" id="L14">    public HttpQuery() {</span>
+
+<span class="fc" id="L16">    }</span>
+
+<span class="fc" id="L18">    public HttpQuery(String query) {</span>
+
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">        if (query == null) {</span>
+
+        }
+
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        else if (query.length() &gt; 0) {</span>
+
+<span class="fc bfc" id="L26" title="All 2 branches covered.">            for (String parameter : query.split(&quot;&amp;&quot;)) {</span>
+<span class="fc" id="L27">                parseParameter(parameter);</span>
+            }
+
+        }
+
+<span class="fc" id="L32">    }</span>
+
+    /**
+     * Parsing the parameter by
+     * @param parameter
+     */
+
+    public void parseParameter(String parameter) {
+
+<span class="fc" id="L41">        int equalsPos = parameter.indexOf(&quot;=&quot;);</span>
+
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        if (equalsPos != -1) {</span>
+
+<span class="fc" id="L45">            String key = decodeURL(parameter.substring(0, equalsPos));</span>
+<span class="fc" id="L46">            String value = decodeURL(parameter.substring(equalsPos + 1));</span>
+
+<span class="fc" id="L48">            parameters.put(key, value);</span>
+        }
+
+<span class="fc" id="L51">    }</span>
+
+    private String urlEncode(String s) {
+        try {
+<span class="nc" id="L55">            return URLEncoder.encode(s, &quot;UTF-8&quot;);</span>
+        }
+<span class="nc" id="L57">        catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L58">            throw new RuntimeException(&quot;Unsupported encoding. Wow.&quot;);</span>
+        }
+    }
+
+    private String decodeURL(String substring) {
+        try {
+<span class="fc" id="L64">            return URLDecoder.decode(substring, &quot;UTF-8&quot;);</span>
+<span class="nc" id="L65">        } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L66">            throw new RuntimeException(&quot;Unsupported encoding. Wow.&quot;);</span>
+
+        }
+    }
+
+    public String toString() {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (parameters.isEmpty()) {</span>
+<span class="nc" id="L73">            return null;</span>
+        }
+<span class="nc" id="L75">        StringBuilder result = new StringBuilder();</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        for (String key : parameters.keySet()) {</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (result.length() &gt; 0) {</span>
+<span class="nc" id="L78">                result.append(&quot;&amp;&quot;);</span>
+            }
+<span class="nc" id="L80">            result.append(urlEncode(key)).append(&quot;=&quot;).append(urlEncode(parameters.get(key)));</span>
+<span class="nc" id="L81">        }</span>
+<span class="nc" id="L82">        return result.toString();</span>
+    }
+
+    public boolean containsParameter(String key){
+
+<span class="nc" id="L87">        return parameters.containsKey(key);</span>
+    }
+
+    public String getParameter(String key) {
+<span class="nc" id="L91">        return parameters.get(key);</span>
+
+    }
+
+    public void setParameter(String key, String value) {
+<span class="nc" id="L96">        parameters.put(key, value);</span>
+<span class="nc" id="L97">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,0 +1,5 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+Innlevering: Server,no.kristiania.pgr200.server,DatabaseManager,0,29,0,0,0,8,0,2,0,2
+Innlevering: Server,no.kristiania.pgr200.server,HttpServer,144,343,8,8,42,71,11,9,4,8
+Innlevering: Server,no.kristiania.pgr200.server,TalkDao,68,211,4,4,17,50,4,7,1,6
+Innlevering: Server,no.kristiania.pgr200.server,Server,50,0,6,0,18,0,6,0,3,0

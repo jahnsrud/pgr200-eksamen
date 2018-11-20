@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="nb"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TalkDao.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Innlevering: Server</a> &gt; <a href="index.source.html" class="el_package">no.kristiania.pgr200.server</a> &gt; <span class="el_source">TalkDao.java</span></div><h1>TalkDao.java</h1><pre class="source lang-java linenums">package no.kristiania.pgr200.server;
+
+import no.kristiania.pgr200.core.Talk;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class TalkDao {
+
+    private DataSource dataSource;
+
+<span class="fc" id="L17">    public TalkDao(DataSource dataSource) {</span>
+
+<span class="fc" id="L19">        this.dataSource = dataSource;</span>
+
+<span class="fc" id="L21">    }</span>
+
+    /**
+     * Creates our table if it does not already exist
+     */
+
+    public void createTableIfNotExists() throws SQLException {
+<span class="fc" id="L28">        try (Connection conn = dataSource.getConnection()) {</span>
+<span class="fc" id="L29">            conn.createStatement().executeUpdate(&quot;create table if not exists TALKS (id serial primary key, TITLE varchar, DESCRIPTION text, TOPIC text)&quot;);</span>
+        }
+<span class="fc" id="L31">    }</span>
+
+    public void create(Talk talk) throws SQLException {
+
+<span class="fc" id="L35">        createTableIfNotExists();</span>
+
+<span class="fc" id="L37">        try (Connection conn = dataSource.getConnection()) {</span>
+
+            // Preventing SQL injections
+<span class="fc" id="L40">            String sql = &quot;insert into TALKS (TITLE, DESCRIPTION, TOPIC) values (?, ?, ?)&quot;;</span>
+
+<span class="fc" id="L42">            String generatedColumns[] = { &quot;id&quot; };</span>
+<span class="fc" id="L43">            try (PreparedStatement statement = conn.prepareStatement(sql, generatedColumns)) {</span>
+<span class="fc" id="L44">                statement.setString(1, talk.getTitle());</span>
+<span class="fc" id="L45">                statement.setString(2, talk.getDescription());</span>
+<span class="fc" id="L46">                statement.setString(3, talk.getTopic());</span>
+
+<span class="fc" id="L48">                statement.executeUpdate();</span>
+
+
+<span class="fc" id="L51">                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">                    if (generatedKeys.next()) {</span>
+<span class="fc" id="L53">                        talk.setId(generatedKeys.getInt(1));</span>
+                    }
+                    else {
+<span class="nc" id="L56">                        throw new SQLException(&quot;Creating talk failed, no ID obtained.&quot;);</span>
+                    }
+                }
+
+            }
+
+        }
+
+<span class="fc" id="L64">    }</span>
+
+    /*
+    Method for dropping our table – if it exists
+    */
+    public void dropTable() throws SQLException {
+<span class="fc" id="L70">        try (Connection conn = dataSource.getConnection()) {</span>
+
+<span class="fc" id="L72">            String sql = &quot;drop table if exists TALKS&quot;;</span>
+<span class="fc" id="L73">            try (PreparedStatement statement = conn.prepareStatement(sql)) {</span>
+<span class="fc" id="L74">                    statement.executeUpdate();</span>
+            }
+
+
+        }
+<span class="fc" id="L79">    }</span>
+    /**
+     * Coming soon:
+     *
+     */
+    // private Talk mapTalk()
+
+
+
+    public List&lt;Talk&gt; listAll() throws SQLException {
+
+<span class="fc" id="L90">        List&lt;Talk&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L92">        try (Connection conn = dataSource.getConnection()) {</span>
+<span class="fc" id="L93">    		String sql = &quot;select * from TALKS&quot;;</span>
+<span class="fc" id="L94">    		try (PreparedStatement statement = conn.prepareStatement(sql)) {</span>
+<span class="fc" id="L95">    			try (ResultSet rs = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">    				while (rs.next()) {</span>
+<span class="fc" id="L97">    					Talk talk = new Talk();</span>
+<span class="fc" id="L98">    					talk.setTitle(rs.getString(&quot;title&quot;));</span>
+<span class="fc" id="L99">    					talk.setDescription(rs.getString(&quot;description&quot;));</span>
+<span class="fc" id="L100">    					talk.setTopic(rs.getString(&quot;topic&quot;));</span>
+<span class="fc" id="L101">    					talk.setId(rs.getInt(&quot;id&quot;));</span>
+
+<span class="fc" id="L103">    					result.add(talk);</span>
+
+<span class="fc" id="L105">    				}</span>
+    			}
+    		}
+    	}
+
+<span class="fc" id="L110">    	return result;</span>
+
+    }
+
+    public List&lt;Talk&gt; listAllTalksByTopic(String topic) throws SQLException {
+
+<span class="nc" id="L116">        List&lt;Talk&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L118">        try (Connection conn = dataSource.getConnection()) {</span>
+<span class="nc" id="L119">            String sql = &quot;select * from TALKS where topic=?&quot;;</span>
+<span class="nc" id="L120">            try (PreparedStatement statement = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L121">                statement.setString(1, topic);</span>
+<span class="nc" id="L122">                try (ResultSet rs = statement.executeQuery()) {</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                    while (rs.next()) {</span>
+<span class="nc" id="L124">                        Talk talk = new Talk();</span>
+<span class="nc" id="L125">                        talk.setTitle(rs.getString(&quot;title&quot;));</span>
+<span class="nc" id="L126">                        talk.setDescription(rs.getString(&quot;description&quot;));</span>
+<span class="nc" id="L127">                        talk.setTopic(rs.getString(&quot;topic&quot;));</span>
+<span class="nc" id="L128">                        talk.setId(rs.getInt(&quot;id&quot;));</span>
+
+<span class="nc" id="L130">                        result.add(talk);</span>
+
+<span class="nc" id="L132">                    }</span>
+                }
+            }
+        }
+
+<span class="nc" id="L137">        return result;</span>
+
+    }
+
+
+    /**
+     *  Gets talk from conference_talk where ID = ?
+     */
+    public Talk getTalkById(int id) throws SQLException{
+
+<span class="fc" id="L147">    	try (Connection connection = dataSource.getConnection()) {</span>
+<span class="fc" id="L148">    		String sql = &quot;select * from TALKS where id = ?&quot;;</span>
+
+<span class="fc" id="L150">    		try (PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L151">    		    statement.setString(1, &quot;&quot; + id);</span>
+<span class="fc" id="L152">    			try (ResultSet resultSet = statement.executeQuery()) {</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">    				while (resultSet.next()) {</span>
+
+<span class="fc" id="L155">    					Talk talk = new Talk();</span>
+<span class="fc" id="L156">    					talk.setId(resultSet.getInt(&quot;id&quot;));</span>
+<span class="fc" id="L157">    					talk.setTitle(resultSet.getString(&quot;title&quot;));</span>
+<span class="fc" id="L158">    					talk.setDescription(resultSet.getString(&quot;description&quot;));</span>
+<span class="fc" id="L159">    					talk.setTopic(resultSet.getString(&quot;topic&quot;));</span>
+
+<span class="fc" id="L161">    					return talk;</span>
+    				}
+    			}
+    		}
+    	}
+    	
+<span class="nc" id="L167">    	return null;</span>
+    }
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

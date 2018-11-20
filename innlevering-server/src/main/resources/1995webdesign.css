@@ -1,0 +1,29 @@
+h1 {
+    font-family: fantasy;
+    text-align: center;
+    color: white;
+}
+
+#main-div {
+    margin: auto;
+    width: 1000px;
+}
+
+#img1 {
+    z-index: 1;
+    position: fixed;
+    width: 1000px;
+}
+
+#img2 {
+    z-index: 2;
+    position: relative;
+    width: 120px;
+    left: 230px;
+    top: 380px;
+    
+}
+
+body {
+    background-color: blue;
+}

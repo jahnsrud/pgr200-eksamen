@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="nb"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpServer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Innlevering: Server</a> &gt; <a href="index.source.html" class="el_package">no.kristiania.pgr200.server</a> &gt; <span class="el_source">HttpServer.java</span></div><h1>HttpServer.java</h1><pre class="source lang-java linenums">package no.kristiania.pgr200.server;
+
+import com.google.gson.Gson;
+import no.kristiania.pgr200.core.*;
+
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class HttpServer {
+
+    private ServerSocket serverSocket;
+    private DatabaseManager databaseManager;
+    private TalkDao dao;
+
+<span class="fc" id="L20">    public HttpServer(int port) throws IOException {</span>
+<span class="fc" id="L21">        serverSocket = new ServerSocket(port);</span>
+<span class="fc" id="L22">        new Thread(this::startServer).start();</span>
+
+<span class="fc" id="L24">    }</span>
+
+    private void startServer() {
+
+        try {
+<span class="fc" id="L29">            databaseManager = new DatabaseManager();</span>
+<span class="fc" id="L30">            dao = new TalkDao(databaseManager.createDataSource());</span>
+<span class="nc" id="L31">        } catch (IOException e) {</span>
+<span class="nc" id="L32">            e.printStackTrace();</span>
+<span class="fc" id="L33">        }</span>
+
+<span class="fc" id="L35">        System.out.println(&quot;Server available on port: &quot; + getPort() + &quot; (host: &quot; + serverSocket.getInetAddress().getHostAddress() +&quot;)&quot;);</span>
+
+        while (true) {
+
+            try {
+<span class="fc" id="L40">                Socket clientSocket = serverSocket.accept();</span>
+<span class="fc" id="L41">                System.out.println(&quot;👋 New connection: &quot; + clientSocket.getInetAddress().getHostAddress());</span>
+<span class="fc" id="L42">                System.out.println(&quot;- Hostname: &quot; + clientSocket.getInetAddress().getHostName());</span>
+
+<span class="fc" id="L44">                handleRequestFromClient(clientSocket);</span>
+
+<span class="nc" id="L46">            } catch (IOException e) {</span>
+<span class="nc" id="L47">                e.printStackTrace();</span>
+<span class="pc" id="L48">            }</span>
+
+        }
+
+    }
+
+    private void handleRequestFromClient(Socket clientSocket) throws IOException {
+
+<span class="fc" id="L56">        InputStream input = clientSocket.getInputStream();</span>
+<span class="fc" id="L57">        OutputStream output = clientSocket.getOutputStream();</span>
+
+<span class="fc" id="L59">        HttpHeaders responseHeaders = new HttpHeaders();</span>
+        HttpQuery query;
+<span class="fc" id="L61">        String body = &quot;&quot;;</span>
+
+        try {
+
+<span class="fc" id="L65">            String requestLine = HttpReadWrite.readLine(input);</span>
+<span class="fc" id="L66">            String requestTarget = requestLine.split(&quot; &quot;)[1];</span>
+
+<span class="fc" id="L68">            HttpPath path = new HttpPath(requestTarget);</span>
+
+<span class="fc" id="L70">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L71">            headers.readHeaders(input);</span>
+
+            // Check if request is GET or POST
+
+<span class="fc" id="L75">            boolean isPostRequest = false;</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (requestLine.split(&quot; &quot;)[0].equals(&quot;POST&quot;)) {</span>
+
+<span class="fc" id="L78">                System.out.println(&quot;Server: Request is POST - HttpServer&quot;);</span>
+
+<span class="fc" id="L80">                body = HttpReadWrite.readBody(input, headers.getContentLength());</span>
+<span class="fc" id="L81">                query = new HttpQuery(body);</span>
+
+<span class="fc" id="L83">                System.out.println(&quot;Server: Content-Length from POST: &quot; + headers.getContentLength());</span>
+
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">                if (path.getPath().equalsIgnoreCase(&quot;/api/add-talk&quot;)) {</span>
+<span class="nc" id="L86">                    body = addTalk(body);</span>
+
+                }
+
+<span class="nc" id="L90">                isPostRequest = true;</span>
+
+            } else {
+<span class="fc" id="L93">                query = path.getQuery();</span>
+
+<span class="fc" id="L95">                System.out.println(&quot;Server: Current Path:&quot;);</span>
+<span class="fc" id="L96">                System.out.println(path.getPath());</span>
+
+
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                if (path.getPath().contains(&quot;/api/list-talks?&quot;)) {</span>
+<span class="nc" id="L100">                    body = handleListAllTalksByTopic(query.getParameter(&quot;topic&quot;));</span>
+                }
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">                if (path.getPath().equalsIgnoreCase(&quot;/api/list-talks&quot;)) {</span>
+<span class="nc" id="L103">                    body = handleListAllTalks();</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                } else if (path.getPath().contains(&quot;/api/view-talk?id=&quot;)) {</span>
+<span class="nc" id="L105">                    body = viewTalk(Integer.parseInt(query.getParameter(&quot;id&quot;)));</span>
+                }
+
+
+            }
+
+<span class="pc bpc" id="L111" title="2 of 4 branches missed.">            if (body == null || body.length() == 0) {</span>
+                // Returns the default body
+<span class="fc" id="L113">                body = &quot;Kristiania!&quot;;</span>
+
+                // Uncomment to unleash a time machine:
+                // body = getHtmlWebsite();
+            }
+
+
+<span class="fc" id="L120">        } catch (RuntimeException e) {</span>
+
+<span class="fc" id="L122">            writeResponseLine(clientSocket,&quot;500&quot;);</span>
+<span class="fc" id="L123">            e.printStackTrace();</span>
+
+<span class="nc" id="L125">        } catch (SQLException e) {</span>
+<span class="nc" id="L126">            e.printStackTrace();</span>
+<span class="fc" id="L127">        }</span>
+
+<span class="fc" id="L129">        writeResponseLine(clientSocket, &quot;200&quot;);</span>
+
+<span class="fc" id="L131">        responseHeaders.put(&quot;X-Server-Name&quot;, Utils.SERVER_NAME);</span>
+<span class="fc" id="L132">        responseHeaders.put(&quot;Content-Type&quot;, Utils.CONTENT_TYPE);</span>
+<span class="fc" id="L133">        responseHeaders.put(&quot;Connection&quot;, &quot;close&quot;);</span>
+<span class="fc" id="L134">        responseHeaders.put(&quot;Content-Length&quot;, &quot;&quot; + body.length());</span>
+
+<span class="fc" id="L136">        responseHeaders.writeHeaders(output);</span>
+<span class="fc" id="L137">        responseHeaders.writeEmptyLine(output);</span>
+
+<span class="fc" id="L139">        output.write((body + &quot;\r\n&quot;).getBytes());</span>
+
+<span class="fc" id="L141">    }</span>
+
+    public void writeResponseLine(Socket clientSocket, String statusCode) throws IOException {
+
+<span class="fc" id="L145">        String statusMessage = getStatusMessage(statusCode);</span>
+<span class="fc" id="L146">        HttpReadWrite.writeLine(clientSocket.getOutputStream(), &quot;HTTP/1.1 &quot; + statusCode + &quot; &quot; + statusMessage);</span>
+
+<span class="fc" id="L148">    }</span>
+
+    public String handleListAllTalks() {
+
+        try {
+
+<span class="nc" id="L154">            List&lt;Talk&gt; talks = dao.listAll();</span>
+<span class="nc" id="L155">            String result = JSONConverter.convertTalkArrayToJSON(talks);</span>
+
+<span class="nc" id="L157">            return result;</span>
+
+<span class="nc" id="L159">        } catch (SQLException e) {</span>
+<span class="nc" id="L160">            e.printStackTrace();</span>
+
+        }
+
+<span class="nc" id="L164">        return null;</span>
+
+    }
+
+    private String handleListAllTalksByTopic(String topic) {
+
+        try {
+
+<span class="nc" id="L172">            List&lt;Talk&gt; talks = dao.listAllTalksByTopic(topic);</span>
+<span class="nc" id="L173">            String result = JSONConverter.convertTalkArrayToJSON(talks);</span>
+
+<span class="nc" id="L175">            return result;</span>
+
+<span class="nc" id="L177">        } catch (SQLException e) {</span>
+<span class="nc" id="L178">            e.printStackTrace();</span>
+
+        }
+
+<span class="nc" id="L182">        return null;</span>
+
+    }
+
+
+    private String addTalk(String jsonBody) throws SQLException {
+
+<span class="fc" id="L189">        Gson gson = new Gson();</span>
+<span class="nc" id="L190">        Talk talk = gson.fromJson(jsonBody, Talk.class);</span>
+
+<span class="nc" id="L192">        dao.createTableIfNotExists();</span>
+
+        try {
+<span class="nc" id="L195">            dao.create(talk);</span>
+
+<span class="nc" id="L197">            return &quot;✅ Talk added: &quot; + talk.getTitle();</span>
+
+<span class="nc" id="L199">        } catch (SQLException e) {</span>
+<span class="nc" id="L200">            e.printStackTrace();</span>
+
+<span class="nc" id="L202">            return &quot;Failed to add talk: &quot; + e.getStackTrace();</span>
+
+        }
+
+    }
+
+    private String viewTalk(int id) throws SQLException {
+
+<span class="nc" id="L210">        Talk talk = dao.getTalkById(id);</span>
+
+<span class="nc" id="L212">        return JSONConverter.convertTalkToJSON(talk);</span>
+
+    }
+
+    private String getHtmlWebsite() {
+
+<span class="nc" id="L218">        StringBuilder contentBuilder = new StringBuilder();</span>
+
+        try {
+
+<span class="nc" id="L222">            InputStream inputBody = getClass().getClassLoader().getResourceAsStream(&quot;1995webdesign.html&quot;);</span>
+<span class="nc" id="L223">            BufferedReader in = new BufferedReader(new InputStreamReader(inputBody));</span>
+            String str;
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            while ((str = in.readLine())!=null) {</span>
+<span class="nc" id="L226">                contentBuilder.append(str);</span>
+            }
+<span class="nc" id="L228">            in.close();</span>
+<span class="nc" id="L229">        } catch (IOException e) {</span>
+<span class="nc" id="L230">            e.printStackTrace();</span>
+<span class="nc" id="L231">        }</span>
+<span class="nc" id="L232">        return contentBuilder.toString();</span>
+
+    }
+
+<span class="fc" id="L236">    private static Map&lt;String, String&gt; statusCodes = new HashMap&lt;&gt;();</span>
+    static {
+<span class="fc" id="L238">        statusCodes.put(&quot;100&quot;, &quot;Continue&quot;);</span>
+<span class="fc" id="L239">        statusCodes.put(&quot;200&quot;, &quot;OK&quot;);</span>
+<span class="fc" id="L240">        statusCodes.put(&quot;301&quot;, &quot;Moved Permanently&quot;);</span>
+<span class="fc" id="L241">        statusCodes.put(&quot;302&quot;, &quot;Found&quot;);</span>
+<span class="fc" id="L242">        statusCodes.put(&quot;307&quot;, &quot;Temporary Redirect&quot;);</span>
+<span class="fc" id="L243">        statusCodes.put(&quot;308&quot;, &quot;Permanent Redirect&quot;);</span>
+<span class="fc" id="L244">        statusCodes.put(&quot;400&quot;, &quot;Bad Request&quot;);</span>
+<span class="fc" id="L245">        statusCodes.put(&quot;401&quot;, &quot;Unauthorized&quot;);</span>
+<span class="fc" id="L246">        statusCodes.put(&quot;403&quot;, &quot;Forbidden&quot;);</span>
+<span class="fc" id="L247">        statusCodes.put(&quot;404&quot;, &quot;Not Found&quot;);</span>
+<span class="fc" id="L248">        statusCodes.put(&quot;408&quot;, &quot;Request Timeout&quot;);</span>
+<span class="fc" id="L249">        statusCodes.put(&quot;418&quot;, &quot;I'm a Teapot&quot;);</span>
+<span class="fc" id="L250">        statusCodes.put(&quot;500&quot;, &quot;Internal Server Error&quot;);</span>
+<span class="fc" id="L251">    }</span>
+
+    private String getStatusMessage(String statusCode){
+<span class="fc" id="L254">        return statusCodes.get(statusCode);</span>
+        }
+
+    public int getPort() {
+<span class="fc" id="L258">        return serverSocket.getLocalPort();</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
